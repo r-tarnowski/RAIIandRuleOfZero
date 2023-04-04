@@ -1,0 +1,10 @@
+.cmake/*
+.idea/*
+.ninja_deps
+.ninja_log
+CMakeCache.txt
+CMakeFiles/*
+Testing/*
+bin/naive_vector
+build.ninja
+cmake_install.cmake
