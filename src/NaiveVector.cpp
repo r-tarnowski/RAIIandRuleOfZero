@@ -72,6 +72,11 @@ public:
       cout << "push_back( " << newVal << " ) called" << endl;
    }
 
+   int & operator[]( size_t pos ) {
+      cout << "operator[]( " << pos << " ) called" << endl;
+      return ptr_[ pos ];
+   }
+
    //A two-argument swap, to make your type efficiently "std::swappable"
    friend void swap( Vec & a, Vec & b) noexcept {
       a.swap( b );
@@ -82,7 +87,7 @@ public:
       os << "Size: " << vec.size_;
       if ( vec.size_ > 0 ) {
          os << ", element(s): ";
-         for ( int i = 0; i < vec.size_; ++ i) {
+         for ( size_t i = 0; i < vec.size_; ++ i) {
             os << vec.ptr_[ i ] << ( i == ( vec.size_ - 1 ) ? "" : ", ");
          }
       }
@@ -113,6 +118,14 @@ int main(int argc, char *argv[]) {
    cout << "cout << vec << endl;" << endl;
    vec.push_back( 2 );
    cout << vec << endl;
+
+   cout << "-------------------------------------------------------------------" << endl;
+   cout << "vec[ 1 ] = 3;" << endl;
+   vec[ 1 ] = 3;
+
+   cout << "-------------------------------------------------------------------" << endl;
+   cout << "cout << \"vec[ 1 ] = \" << vec[ 1 ] << endl;" << endl;
+   cout << "vec[ 1 ] = " << vec[ 1 ] << endl;
 
    cout << "-------------------------------------------------------------------" << endl;
    cout << "Vec vec1( vec );" << endl;
