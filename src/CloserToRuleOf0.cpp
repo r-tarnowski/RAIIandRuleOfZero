@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <algorithm>
+#include <memory>
 
 using std::cout;
 using std::endl;
@@ -8,7 +9,7 @@ using std::endl;
 void printHeader() {
    cout << endl;
    cout << "================================================" << endl;
-   cout << "No longer naive vector - an example taken from  "  << endl;
+   cout << " Closer To Rule of Zero - an example taken from "  << endl;
    cout << "         the lecture by Arthur O'Dwyer          " << endl;
    cout << "          RAII and the Rule of Zero             " << endl;
    cout << "                 CppCon 2019                    " << endl;
@@ -20,35 +21,28 @@ class Vec {
 
 public:
 
-   Vec() : ptr_( nullptr ), size_( 0 ) {
+   Vec() : uniquePtr( nullptr ), size_( 0 ) {
       cout << "Constructor called" << endl;
    }
 
-   //A copy constructor to copy the resource (avoid double-frees)
+   //copy the resource
    Vec( const Vec& rhs ) {
-      ptr_ = new int[ rhs.size_ ];
+      uniquePtr = std::make_unique<int[]>( rhs.size_ );
       size_ = rhs.size_;
-      std::copy( rhs.ptr_, rhs.ptr_ + size_, ptr_ );
+      std::copy( rhs.uniquePtr.get(), rhs.uniquePtr.get() + size_ , uniquePtr.get() );
       cout << "Copy constructor called" << endl;
    }
 
-   //A move constructor, to transfer ownership of the resource (cheaper than copying)
-   Vec( Vec && rhs ) noexcept {
-      ptr_ = std::exchange( rhs.ptr_, nullptr );
-      size_ = std::exchange( rhs.size_, 0 );
-      cout << "Move constructor called" << endl;
-   }
+   //transfer ownership
+   Vec( Vec && rhs ) noexcept =default;
 
-   //A destructor to free the resource (avoid leaks)
-   ~Vec() {
-      delete [] ptr_;
-      cout << "Destructor called" << endl;
-   }
+   //free the resource
+   ~Vec() = default;
 
    //A member swap too, for simplicity
    void swap( Vec & rhs) noexcept {
       using std::swap;
-      swap( ptr_, rhs.ptr_ );
+      swap( uniquePtr, rhs.uniquePtr );
       swap( size_, rhs.size_ );
       cout << "Member swap called" << endl;
    }
@@ -63,18 +57,18 @@ public:
    }
 
    void push_back( int newVal ) {
-      int * newPtr = new int[ size_ + 1 ];
-      std::copy( ptr_, ptr_ + size_, newPtr );
-      delete[] ptr_;
-      ptr_ = newPtr;
-      ptr_[size_] = newVal;
+      auto newPtr = std::make_unique<int[]>( size_ + 1 );
+      std::copy( uniquePtr.get(), uniquePtr.get() + size_, newPtr.get());
+      newPtr[ size_ ] = newVal;
       size_ ++;
+      uniquePtr.reset();
+      uniquePtr = std::move( newPtr);
       cout << "push_back( " << newVal << " ) called" << endl;
    }
 
    int & operator[]( size_t pos ) {
       //cout << "operator[]( " << pos << " ) called" << endl;
-      return ptr_[ pos ];
+      return uniquePtr[ pos ];
    }
 
    //A two-argument swap, to make your type efficiently "std::swappable"
@@ -88,14 +82,14 @@ public:
       if ( vec.size_ > 0 ) {
          os << ", element(s): ";
          for ( size_t i = 0; i < vec.size_; ++ i) {
-            os << vec.ptr_[ i ] << ( i == ( vec.size_ - 1 ) ? "" : ", ");
+            os << vec.uniquePtr[ i ] << ( i == ( vec.size_ - 1 ) ? "" : ", ");
          }
       }
       return os;
    }
 
 private:
-   int * ptr_;
+   std::unique_ptr<int[]> uniquePtr;
    size_t size_;
 };
 
@@ -142,14 +136,15 @@ int main(int argc, char *argv[]) {
    cout << "vec : " << vec << endl;
    cout << "Vec vec3( std::move( vec ) );" << endl;
    Vec vec3( std::move( vec ) );
-   cout << "vec : " << vec << endl;
+   cout << "ATTENTION: after std::move( vec ) vec is no longer valid! You can't print it!"<< endl;
    cout << "vec3 : " << vec3 << endl;
 
    cout << "-------------------------------------------------------------------" << endl;
-   cout << "vec : " << vec << endl;
+   //cout << "vec : " << vec << endl;
    cout << "vec2 : " << vec2 << endl;
-   cout << "vec2 = vec;" << endl;
-   vec2 = vec;
+   cout << "vec = vec2;" << endl;
+   vec = vec2;
+   cout << "ATTENTION: after vec = vec2 vec is valid again! Now you can print it!"<< endl;
    cout << "vec : " << vec << endl;
    cout << "vec2 : " << vec2 << endl;
 

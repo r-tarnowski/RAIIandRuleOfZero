@@ -6,5 +6,7 @@ CMakeCache.txt
 CMakeFiles/*
 Testing/*
 bin/naive_vector
+bin/rule_of_0
+bin/closer_to_rule_of_0
 build.ninja
 cmake_install.cmake

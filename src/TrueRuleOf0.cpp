@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <algorithm>
+#include <vector>
 
 using std::cout;
 using std::endl;
@@ -8,7 +9,7 @@ using std::endl;
 void printHeader() {
    cout << endl;
    cout << "================================================" << endl;
-   cout << "No longer naive vector - an example taken from  "  << endl;
+   cout << "  Rule of Zero Vector - an example taken from   " << endl;
    cout << "         the lecture by Arthur O'Dwyer          " << endl;
    cout << "          RAII and the Rule of Zero             " << endl;
    cout << "                 CppCon 2019                    " << endl;
@@ -20,61 +21,34 @@ class Vec {
 
 public:
 
-   Vec() : ptr_( nullptr ), size_( 0 ) {
-      cout << "Constructor called" << endl;
-   }
+   Vec() = default;
 
    //A copy constructor to copy the resource (avoid double-frees)
-   Vec( const Vec& rhs ) {
-      ptr_ = new int[ rhs.size_ ];
-      size_ = rhs.size_;
-      std::copy( rhs.ptr_, rhs.ptr_ + size_, ptr_ );
-      cout << "Copy constructor called" << endl;
-   }
+   Vec( const Vec& rhs ) = default;
 
    //A move constructor, to transfer ownership of the resource (cheaper than copying)
-   Vec( Vec && rhs ) noexcept {
-      ptr_ = std::exchange( rhs.ptr_, nullptr );
-      size_ = std::exchange( rhs.size_, 0 );
-      cout << "Move constructor called" << endl;
-   }
+   Vec( Vec && rhs ) noexcept = default;
+
+   Vec & operator= ( const Vec & rhs ) noexcept = default;
+
+   Vec & operator= ( Vec && rhs ) noexcept = default;
 
    //A destructor to free the resource (avoid leaks)
-   ~Vec() {
-      delete [] ptr_;
-      cout << "Destructor called" << endl;
-   }
+   ~Vec() = default;
 
-   //A member swap too, for simplicity
+   //A member swap ownership: now only for performance, not correctness
    void swap( Vec & rhs) noexcept {
-      using std::swap;
-      swap( ptr_, rhs.ptr_ );
-      swap( size_, rhs.size_ );
-      cout << "Member swap called" << endl;
-   }
-
-   //An assigment operator to free the left-hand resource and transfer ownership
-   // of the right-hand one
-   // ??? : Vec copy OR: Vec & copy
-   Vec & operator= (Vec copy) noexcept {
-      copy.swap( * this);
-      cout << "Assignment operator called" << endl;
-      return * this;
+      vec_.swap( rhs.vec_ );
    }
 
    void push_back( int newVal ) {
-      int * newPtr = new int[ size_ + 1 ];
-      std::copy( ptr_, ptr_ + size_, newPtr );
-      delete[] ptr_;
-      ptr_ = newPtr;
-      ptr_[size_] = newVal;
-      size_ ++;
+      vec_.push_back( newVal );
       cout << "push_back( " << newVal << " ) called" << endl;
    }
 
    int & operator[]( size_t pos ) {
       //cout << "operator[]( " << pos << " ) called" << endl;
-      return ptr_[ pos ];
+      return vec_[ pos ];
    }
 
    //A two-argument swap, to make your type efficiently "std::swappable"
@@ -84,19 +58,18 @@ public:
    }
 
    friend std::ostream& operator<<(std::ostream& os, const Vec & vec) {
-      os << "Size: " << vec.size_;
-      if ( vec.size_ > 0 ) {
+      os << "Size: " << vec.vec_.size();
+      if ( vec.vec_.size() > 0 ) {
          os << ", element(s): ";
-         for ( size_t i = 0; i < vec.size_; ++ i) {
-            os << vec.ptr_[ i ] << ( i == ( vec.size_ - 1 ) ? "" : ", ");
+         for ( size_t i = 0; i < vec.vec_.size(); ++ i) {
+            os << vec.vec_[ i ] << ( i == ( vec.vec_.size() - 1 ) ? "" : ", ");
          }
       }
       return os;
    }
 
 private:
-   int * ptr_;
-   size_t size_;
+  std::vector<int> vec_;
 };
 
 int main(int argc, char *argv[]) {
